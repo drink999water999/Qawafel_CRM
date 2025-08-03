@@ -2,14 +2,21 @@
 import { GoogleGenAI } from "@google/genai";
 import { UserType } from '../types.ts';
 
-if (!process.env.API_KEY) {
-  console.error("API_KEY environment variable not set.");
-}
+let ai: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+const getAiClient = (): GoogleGenAI => {
+    if (!process.env.API_KEY) {
+        throw new Error("API_KEY environment variable is not configured.");
+    }
+    if (!ai) {
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+    return ai;
+};
 
 export const generateCommunicationMessage = async (userType: UserType, messageType: string, channel: 'Email' | 'SMS' | 'Push' | 'WhatsApp', customPrompt?: string): Promise<string> => {
   try {
+    const client = getAiClient();
     const prompt = `
       You are a professional B2B communication assistant for "Qawafel CRM", a marketplace connecting vendors with retailers.
       Your task is to generate a concise, professional, and friendly message.
@@ -27,7 +34,7 @@ export const generateCommunicationMessage = async (userType: UserType, messageTy
       ${channel === 'WhatsApp' ? `The message should be friendly and conversational, suitable for WhatsApp. Emojis are allowed. Do not use formal greetings or closings.` : ''}
     `;
     
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
     });
@@ -35,6 +42,9 @@ export const generateCommunicationMessage = async (userType: UserType, messageTy
     return response.text;
   } catch (error) {
     console.error("Error generating message:", error);
-    return "Failed to generate message. Please check the console for details.";
+    if (error instanceof Error && error.message.includes("API_KEY")) {
+        return "AI Service is not configured. Please ensure the API Key is set correctly by the administrator.";
+    }
+    return "Failed to generate message. Please try again later.";
   }
 };
