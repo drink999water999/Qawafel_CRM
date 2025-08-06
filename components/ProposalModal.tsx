@@ -9,9 +9,10 @@ interface ProposalModalProps {
   onClose: () => void;
   onSave: (proposal: Omit<Proposal, 'id'> | Proposal) => void;
   proposal?: Proposal;
+  prefilledClient?: { clientName: string; clientCompany: string; };
 }
 
-export const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose, onSave, proposal }) => {
+export const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose, onSave, proposal, prefilledClient }) => {
   const [formData, setFormData] = useState<ProposalData>({});
 
   useEffect(() => {
@@ -23,15 +24,15 @@ export const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose, o
     } else {
       setFormData({
         title: '',
-        clientName: '',
-        clientCompany: '',
+        clientName: prefilledClient?.clientName || '',
+        clientCompany: prefilledClient?.clientCompany || '',
         value: 0,
         currency: 'SAR',
         status: ProposalStatus.Draft,
         validUntil: '',
       });
     }
-  }, [proposal, isOpen]);
+  }, [proposal, isOpen, prefilledClient]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -42,9 +43,11 @@ export const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose, o
     e.preventDefault();
     if (!formData.title || !formData.clientName) return; 
     
+    const isNewSent = formData.status !== ProposalStatus.Draft && (!proposal || proposal.status === ProposalStatus.Draft);
+
     const payload = {
         ...formData,
-        sentDate: (formData.status === ProposalStatus.Sent && !(proposal?.sentDate)) 
+        sentDate: isNewSent
             ? new Date().toISOString().split('T')[0] 
             : proposal?.sentDate || '',
         createdAt: proposal?.createdAt || new Date().toISOString().split('T')[0],
@@ -71,11 +74,15 @@ export const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose, o
           <div className="grid grid-cols-2 gap-4">
             <div>
                 <label className="block text-sm font-medium text-[var(--text-light)]">Client Name</label>
-                <input type="text" name="clientName" value={formData.clientName || ''} onChange={handleChange} required className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]" />
+                <input type="text" name="clientName" value={formData.clientName || ''} onChange={handleChange} required 
+                  readOnly={!!prefilledClient}
+                  className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] ${prefilledClient ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`} />
             </div>
             <div>
                 <label className="block text-sm font-medium text-[var(--text-light)]">Client Company</label>
-                <input type="text" name="clientCompany" value={formData.clientCompany || ''} onChange={handleChange} required className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)]" />
+                <input type="text" name="clientCompany" value={formData.clientCompany || ''} onChange={handleChange} required 
+                  readOnly={!!prefilledClient}
+                  className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[var(--primary)] focus:border-[var(--primary)] ${prefilledClient ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`} />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">

@@ -1,3 +1,4 @@
+
 import Dexie, { type EntityTable } from 'dexie';
 import {
   Retailer, Vendor, Ticket, Proposal, Lead, Deal, UserProfile, Activity
@@ -23,20 +24,21 @@ class QawafelDB extends Dexie {
 
   constructor() {
     super('QawafelCRMDB');
-    this.version(1).stores({
-      retailers: '++id, name, company, accountStatus, marketplaceStatus',
-      vendors: '++id, name, businessName, category, accountStatus, marketplaceStatus',
-      tickets: '++id, status, type, userId, userType, createdAt',
-      proposals: '++id, clientName, status, validUntil',
-      leads: '++id, company, status, source',
-      deals: '++id, stage, closeDate',
-      userProfile: 'id', // Primary key is 'id', not auto-incrementing for this table
-      activities: '++id, timestamp'
-    });
   }
 }
 
 export const db = new QawafelDB();
+
+db.version(1).stores({
+  retailers: '++id, name, company, accountStatus, marketplaceStatus',
+  vendors: '++id, name, businessName, category, accountStatus, marketplaceStatus',
+  tickets: '++id, status, type, userId, userType, createdAt',
+  proposals: '++id, clientName, status, validUntil',
+  leads: '++id, company, status, source, formToken',
+  deals: '++id, stage, closeDate',
+  userProfile: 'id', // Primary key is 'id', not auto-incrementing for this table
+  activities: '++id, timestamp'
+});
 
 
 export async function populateDatabase() {

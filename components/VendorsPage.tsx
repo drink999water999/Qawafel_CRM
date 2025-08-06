@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
-import { Vendor, UserType, Activity } from '../types.ts';
+import { Vendor, UserType, Activity, Proposal, Deal, ProposalStatus, DealStage } from '../types.ts';
 import { UserTable } from './UserTable.tsx';
 import { UserModal } from './UserModal.tsx';
 import { GroupCommunicationModal } from './GroupCommunicationModal.tsx';
 import { SingleCommunicationModal } from './SingleCommunicationModal.tsx';
+import { ProposalModal } from './ProposalModal.tsx';
+
 
 type Channel = 'WhatsApp' | 'Email' | 'SMS' | 'Push';
 
@@ -13,9 +15,11 @@ interface VendorsPageProps {
   addVendor: (vendor: Omit<Vendor, 'id'>) => void;
   updateVendor: (vendor: Vendor) => void;
   addActivity: (activity: Omit<Activity, 'id'>) => void;
+  onAddProposal: (proposal: Omit<Proposal, 'id'>) => void;
+  onAddDeal: (deal: Omit<Deal, 'id'>) => void;
 }
 
-export const VendorsPage: React.FC<VendorsPageProps> = ({ vendors, addVendor, updateVendor, addActivity }) => {
+export const VendorsPage: React.FC<VendorsPageProps> = ({ vendors, addVendor, updateVendor, addActivity, onAddProposal, onAddDeal }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCommModalOpen, setIsCommModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | undefined>(undefined);
@@ -23,6 +27,9 @@ export const VendorsPage: React.FC<VendorsPageProps> = ({ vendors, addVendor, up
   const [isSingleCommModalOpen, setIsSingleCommModalOpen] = useState(false);
   const [contactUser, setContactUser] = useState<Vendor | undefined>(undefined);
   const [contactChannel, setContactChannel] = useState<Channel>('Email');
+
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  const [proposalTargetVendor, setProposalTargetVendor] = useState<Vendor | undefined>(undefined);
 
 
   const handleOpenModal = (vendor?: Vendor) => {
@@ -70,6 +77,55 @@ export const VendorsPage: React.FC<VendorsPageProps> = ({ vendors, addVendor, up
     handleCloseModal();
   };
 
+  const handleSendProposalClick = (vendor: Vendor) => {
+    setProposalTargetVendor(vendor);
+    setIsProposalModalOpen(true);
+  };
+
+  const handleCloseProposalModal = () => {
+      setProposalTargetVendor(undefined);
+      setIsProposalModalOpen(false);
+  }
+
+  const handleSaveProposal = (proposalData: Omit<Proposal, 'id'> | Proposal) => {
+      if ('id' in proposalData) {
+          // This component only handles creating new proposals for vendors.
+          // Editing is handled in the main ProposalsPage.
+          return;
+      }
+      
+      onAddProposal(proposalData);
+
+      if (proposalData.status !== ProposalStatus.Draft && proposalTargetVendor) {
+          const newDeal: Omit<Deal, 'id'> = {
+              title: `Deal for ${proposalTargetVendor.businessName}`,
+              company: proposalTargetVendor.businessName,
+              contactName: proposalTargetVendor.name,
+              value: proposalData.value,
+              stage: DealStage.Proposal,
+              probability: 25, 
+              closeDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+          };
+          onAddDeal(newDeal);
+          addActivity({
+            text: `New deal created for vendor "${proposalTargetVendor.businessName}" from proposal.`,
+            timestamp: Date.now(),
+            icon: 'deal-won' // using deal-won icon for visibility
+          });
+      }
+      
+      if (proposalTargetVendor) {
+          addActivity({
+              text: `Proposal "${proposalData.title}" sent to vendor "${proposalTargetVendor.businessName}".`,
+              timestamp: Date.now(),
+              icon: 'proposal-sent'
+          });
+      }
+
+      handleCloseProposalModal();
+  };
+
+
   const columns: { header: string; accessor: keyof Vendor }[] = [
     { header: 'Contact Name', accessor: 'name' },
     { header: 'Business Name', accessor: 'businessName' },
@@ -113,6 +169,7 @@ export const VendorsPage: React.FC<VendorsPageProps> = ({ vendors, addVendor, up
         onSelectionChange={handleSelectionChange}
         onSelectAll={handleSelectAll}
         onContact={handleContact}
+        onSendProposal={handleSendProposalClick}
       />
       {isModalOpen && (
         <UserModal
@@ -141,6 +198,17 @@ export const VendorsPage: React.FC<VendorsPageProps> = ({ vendors, addVendor, up
             initialChannel={contactChannel}
             onSend={addActivity}
         />
+      )}
+      {isProposalModalOpen && proposalTargetVendor && (
+          <ProposalModal
+              isOpen={isProposalModalOpen}
+              onClose={handleCloseProposalModal}
+              onSave={handleSaveProposal}
+              prefilledClient={{
+                  clientName: proposalTargetVendor.name,
+                  clientCompany: proposalTargetVendor.businessName,
+              }}
+          />
       )}
     </div>
   );

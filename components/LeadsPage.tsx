@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Lead, LeadStatus } from '../types.ts';
 import { LeadModal } from './LeadModal.tsx';
 import { ConfirmationModal } from './ConfirmationModal.tsx';
+import { SendFormModal } from './SendFormModal.tsx';
 
 interface LeadsPageProps {
   leads: Lead[];
@@ -19,33 +20,24 @@ const statusColors: Record<LeadStatus, string> = {
     [LeadStatus.Lost]: 'bg-red-500',
 };
 
-const LeadRow: React.FC<{ lead: Lead; onUpdate: (lead: Lead) => void; onEdit: (lead: Lead) => void; onDeleteClick: (id: number) => void; }> = ({ lead, onUpdate, onEdit, onDeleteClick }) => {
+const LeadRow: React.FC<{ 
+    lead: Lead; 
+    onUpdate: (lead: Lead) => void; 
+    onEdit: (lead: Lead) => void; 
+    onDeleteClick: (id: number) => void;
+    onSendFormClick: (lead: Lead) => void;
+}> = ({ lead, onUpdate, onEdit, onDeleteClick, onSendFormClick }) => {
     
     const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         onUpdate({ ...lead, status: e.target.value as LeadStatus });
     };
 
-    const handleDelete = () => {
-       onDeleteClick(lead.id);
-    };
-
     return (
         <div className="grid grid-cols-12 gap-x-4 items-center py-4 px-5 border-t border-gray-100 hover:bg-gray-50/50">
             {/* Company */}
-            <div className="col-span-2">
-                <p className="font-bold text-gray-800">{lead.company}</p>
-                <p className="text-sm text-gray-500">{lead.contactName}</p>
-            </div>
-            {/* Contact */}
-            <div className="col-span-3 text-sm text-gray-600 space-y-1">
-                <p className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    {lead.email}
-                </p>
-                <p className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                    {lead.phone}
-                </p>
+            <div className="col-span-3">
+                <p className="font-bold text-gray-800 truncate">{lead.company}</p>
+                <p className="text-sm text-gray-500 truncate">{lead.contactName}</p>
             </div>
             {/* Status */}
             <div className="col-span-2">
@@ -63,7 +55,7 @@ const LeadRow: React.FC<{ lead: Lead; onUpdate: (lead: Lead) => void; onEdit: (l
                 </div>
             </div>
             {/* Source */}
-            <div className="col-span-2">
+            <div className="col-span-1">
                 <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200">
                     {lead.source}
                 </span>
@@ -72,12 +64,19 @@ const LeadRow: React.FC<{ lead: Lead; onUpdate: (lead: Lead) => void; onEdit: (l
             <div className="col-span-1 font-semibold text-green-600">
                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(lead.value)}
             </div>
+            {/* Biz Size */}
+            <div className="col-span-1 text-sm text-gray-600 truncate">{lead.businessSize || 'N/A'}</div>
+            {/* Branches */}
+            <div className="col-span-1 text-sm text-gray-600">{lead.numberOfBranches ?? 'N/A'}</div>
             {/* Actions */}
-            <div className="col-span-2 flex justify-start items-center space-x-2">
+            <div className="col-span-3 flex justify-start items-center space-x-1">
+                 <button onClick={() => onSendFormClick(lead)} title="Send data collection form" className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
                 <button onClick={() => onEdit(lead)} title="Edit Lead" className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
                 </button>
-                <button onClick={handleDelete} title="Delete Lead" className="p-2 rounded-md transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50">
+                <button onClick={() => onDeleteClick(lead.id)} title="Delete Lead" className="p-2 rounded-md transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
             </div>
@@ -89,6 +88,8 @@ export const LeadsPage: React.FC<LeadsPageProps> = ({ leads, onAddLead, onUpdate
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
     const [deletingLeadId, setDeletingLeadId] = useState<number | null>(null);
+    const [isSendFormModalOpen, setIsSendFormModalOpen] = useState(false);
+    const [formLead, setFormLead] = useState<Lead | undefined>(undefined);
 
     const handleOpenModal = (lead?: Lead) => {
         setEditingLead(lead);
@@ -118,6 +119,16 @@ export const LeadsPage: React.FC<LeadsPageProps> = ({ leads, onAddLead, onUpdate
     
     const leadToDelete = deletingLeadId ? leads.find(l => l.id === deletingLeadId) : null;
 
+    const handleSendFormClick = (lead: Lead) => {
+        setFormLead(lead);
+        setIsSendFormModalOpen(true);
+    };
+
+    const handleSendFormModalClose = () => {
+        setIsSendFormModalOpen(false);
+        setFormLead(undefined);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -142,12 +153,13 @@ export const LeadsPage: React.FC<LeadsPageProps> = ({ leads, onAddLead, onUpdate
                 
                 {/* Header */}
                 <div className="grid grid-cols-12 gap-x-4 px-5 pb-3 text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                    <div className="col-span-2">Company</div>
-                    <div className="col-span-3">Contact</div>
+                    <div className="col-span-3">Company</div>
                     <div className="col-span-2">Status</div>
-                    <div className="col-span-2">Source</div>
+                    <div className="col-span-1">Source</div>
                     <div className="col-span-1">Value</div>
-                    <div className="col-span-2">Actions</div>
+                    <div className="col-span-1">Biz Size</div>
+                    <div className="col-span-1">Branches</div>
+                    <div className="col-span-3">Actions</div>
                 </div>
 
                 {/* Body */}
@@ -158,9 +170,13 @@ export const LeadsPage: React.FC<LeadsPageProps> = ({ leads, onAddLead, onUpdate
                             lead={lead} 
                             onUpdate={onUpdateLead} 
                             onEdit={handleOpenModal} 
-                            onDeleteClick={setDeletingLeadId} 
+                            onDeleteClick={setDeletingLeadId}
+                            onSendFormClick={handleSendFormClick} 
                         />
                     ))}
+                     {leads.length === 0 && (
+                        <p className="text-center text-gray-500 py-8">No leads found. Add one to get started!</p>
+                    )}
                 </div>
             </div>
 
@@ -170,6 +186,14 @@ export const LeadsPage: React.FC<LeadsPageProps> = ({ leads, onAddLead, onUpdate
                     onClose={handleCloseModal}
                     onSave={handleSave}
                     lead={editingLead}
+                />
+            )}
+            {isSendFormModalOpen && formLead && (
+                <SendFormModal
+                    isOpen={isSendFormModalOpen}
+                    onClose={handleSendFormModalClose}
+                    lead={formLead}
+                    onUpdateLead={onUpdateLead}
                 />
             )}
             <ConfirmationModal

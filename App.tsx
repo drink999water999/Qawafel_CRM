@@ -12,6 +12,7 @@ import { SettingsPage } from './components/SettingsPage.tsx';
 import { DealsPage } from './components/DealsPage.tsx';
 import { Page, Retailer, Vendor, Ticket, Proposal, Lead, Deal, DealStage, UserProfile, TicketStatus, Activity } from './types.ts';
 import { LeadsPage } from './components/LeadsPage.tsx';
+import { LeadFormPage } from './components/LeadFormPage.tsx';
 import { db, populateDatabase } from './services/db.ts';
 
 const App: React.FC = () => {
@@ -26,6 +27,14 @@ const App: React.FC = () => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>({ id: 1, fullName: '', email: '', phone: '' });
+  
+  const path = window.location.pathname;
+  const leadFormMatch = path.match(/^\/form\/lead\/(.+)/);
+
+  if (leadFormMatch) {
+      const token = leadFormMatch[1];
+      return <LeadFormPage token={token} />;
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -106,8 +115,9 @@ const App: React.FC = () => {
   }, []);
 
   const addProposal = useCallback(async (proposal: Omit<Proposal, 'id'>) => {
-    await db.proposals.add(proposal as Proposal);
-    setProposals(await db.proposals.toArray());
+    const newId = await db.proposals.add(proposal as Proposal);
+    const newProposal = await db.proposals.get(newId);
+    if(newProposal) setProposals(prev => [...prev, newProposal]);
   }, []);
 
   const updateProposal = useCallback(async (updatedProposal: Proposal) => {
@@ -169,13 +179,13 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case Page.Dashboard:
-        return <Dashboard retailers={retailers} vendors={vendors} activities={activities} />;
+        return <Dashboard retailers={retailers} vendors={vendors} activities={activities} leads={leads} deals={deals} />;
       case Page.Leads:
          return <LeadsPage leads={leads} onAddLead={addLead} onUpdateLead={updateLead} onDeleteLead={deleteLead} />;
       case Page.Deals:
         return <DealsPage deals={deals} onUpdateDealStage={handleUpdateDealStage} onAddDeal={addDeal} onUpdateDeal={updateDeal} onDeleteDeal={deleteDeal} />;
       case Page.Vendors:
-        return <VendorsPage vendors={vendors} addVendor={addVendor} updateVendor={updateVendor} addActivity={addActivity} />;
+        return <VendorsPage vendors={vendors} addVendor={addVendor} updateVendor={updateVendor} addActivity={addActivity} onAddProposal={addProposal} onAddDeal={addDeal} />;
       case Page.Retailers:
         return <RetailersPage retailers={retailers} addRetailer={addRetailer} updateRetailer={updateRetailer} addActivity={addActivity} />;
       case Page.Proposals:
@@ -187,7 +197,7 @@ const App: React.FC = () => {
       case Page.CreateTicket:
         return <CreateTicketPage retailers={retailers} vendors={vendors} onAddTicket={addTicket} />;
       default:
-        return <Dashboard retailers={retailers} vendors={vendors} activities={activities} />;
+        return <Dashboard retailers={retailers} vendors={vendors} activities={activities} leads={leads} deals={deals} />;
     }
   };
 

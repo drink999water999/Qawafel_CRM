@@ -20,6 +20,7 @@ interface UserTableProps<T extends User> {
   onSelectAll: (isChecked: boolean) => void;
   onContact?: (item: T, channel: Channel) => void;
   contactOptions?: Channel[];
+  onSendProposal?: (item: T) => void;
 }
 
 const getAccountStatusColor = (status: AccountStatus) => {
@@ -62,7 +63,8 @@ export const UserTable = <T extends User,>({
     onAccountStatusChange, onMarketplaceStatusChange,
     selectedIds, onSelectionChange, onSelectAll,
     onContact,
-    contactOptions = ['WhatsApp', 'Email', 'SMS', 'Push']
+    contactOptions = ['WhatsApp', 'Email', 'SMS', 'Push'],
+    onSendProposal,
 }: UserTableProps<T>) => {
   const isAllSelected = data.length > 0 && selectedIds.size === data.length;
     
@@ -117,6 +119,17 @@ export const UserTable = <T extends User,>({
               ))}
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center space-x-2">
+                    {onSendProposal && (
+                        <button
+                            onClick={() => onSendProposal(item)}
+                            className="p-2 text-purple-500 hover:text-purple-600 hover:bg-purple-100 rounded-md transition-colors"
+                            title="Create Proposal"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </button>
+                    )}
                     {onContact && (
                         <>
                             <div className="flex items-center space-x-2">

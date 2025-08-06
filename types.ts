@@ -1,3 +1,4 @@
+
 export enum AccountStatus {
   Active = 'Active',
   Deactivated = 'Deactivated',
@@ -119,6 +120,9 @@ export interface Lead {
   status: LeadStatus;
   source: string;
   value: number;
+  businessSize?: string;
+  numberOfBranches?: number;
+  formToken?: string;
 }
 
 export interface Deal {
